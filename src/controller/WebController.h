@@ -4,10 +4,16 @@
 #include <WiFiS3.h>
 
 #include "../generated/WebAssets.h"
+#include "AudioController.h"
 
 class WebController
 {
 public:
+    WebController(AudioController &audioController)
+        : _audioController(audioController)
+    {
+    }
+
     void handleClient(WiFiClient client)
     {
         if (!client)
@@ -22,8 +28,6 @@ public:
             {
                 requestLine = client.readStringUntil('\n');
                 requestLine.trim();
-
-                Serial.println(requestLine);
 
                 while (client.available())
                     client.read();
@@ -44,6 +48,10 @@ public:
         {
             handleSliderRequest(client, requestLine);
         }
+        else if (requestLine.startsWith("GET /api/audio"))
+        {
+            handleAudioRequest(client);
+        }
         else
         {
             sendResponse(client, "text/html", INDEX_HTML);
@@ -53,20 +61,31 @@ public:
     }
 
 private:
-    void handleSliderRequest(WiFiClient& client, const String& requestLine)
+    AudioController &_audioController;
+
+    void handleSliderRequest(WiFiClient &client, const String &requestLine)
     {
         int id = getQueryInt(requestLine, "id");
         int value = getQueryInt(requestLine, "value");
 
-        Serial.print("Slider ");
-        Serial.print(id);
-        Serial.print(": ");
-        Serial.println(value);
+        _audioController.setWebValue(id, value);
 
         sendResponse(client, "text/plain", "OK");
     }
 
-    int getQueryInt(const String& requestLine, const String& key)
+    void handleAudioRequest(WiFiClient& client)
+{
+    String json = "{";
+    json += "\"mic\":" + String(_audioController.getValue(0)) + ",";
+    json += "\"volume\":" + String(_audioController.getValue(1)) + ",";
+    json += "\"treble\":" + String(_audioController.getValue(2)) + ",";
+    json += "\"bass\":" + String(_audioController.getValue(3));
+    json += "}";
+
+    sendResponse(client, "application/json", json);
+}
+
+    int getQueryInt(const String &requestLine, const String &key)
     {
         String search = key + "=";
 
@@ -85,18 +104,15 @@ private:
         return requestLine.substring(start, end).toInt();
     }
 
-    void sendResponse(WiFiClient& client,
-                      const char* contentType,
-                      const char* content)
+    void sendResponse(WiFiClient &client,
+                      const char *contentType,
+                      const String &content)
     {
         client.println("HTTP/1.1 200 OK");
-
         client.print("Content-Type: ");
         client.println(contentType);
-
         client.println("Connection: close");
         client.println();
-
         client.print(content);
     }
 };
