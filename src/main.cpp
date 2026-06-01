@@ -1,6 +1,7 @@
 #include <Arduino.h>
 
 #include "driver/WifiApServer.h"
+#include "controller/AudioController.h"
 #include "controller/WebController.h"
 
 WifiApServer wifiServer(
@@ -8,16 +9,21 @@ WifiApServer wifiServer(
     "12345678"
 );
 
-WebController webController;
+AudioController audioController;
+WebController webController(audioController);
 
 void setup()
 {
     Serial.begin(115200);
+
+    audioController.begin();
     wifiServer.begin();
 }
 
 void loop()
 {
+    audioController.update();
+
     WiFiClient client = wifiServer.available();
 
     if (client)
