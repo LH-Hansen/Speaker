@@ -1,0 +1,192 @@
+#pragma once
+
+#include <Arduino.h>
+
+const char INDEX_HTML[] PROGMEM = R"rawliteral(
+<!DOCTYPE html>
+<html>
+<head>
+  <title>UNO R4 Sliders</title>
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+  <main class="eq-panel">
+
+    <div class="channel">
+    <input type="range" min="0" max="100" value="2" data-id="0">
+    <span class="label">Mic</span>
+</div>
+
+<div class="channel">
+    <input type="range" min="0" max="100" value="50" data-id="1">
+    <span class="label">Volume</span>
+</div>
+
+<div class="channel">
+    <input type="range" min="0" max="100" value="50" data-id="2">
+    <span class="label">Treble</span>
+</div>
+
+<div class="channel">
+    <input type="range" min="0" max="100" value="50" data-id="3">
+    <span class="label">Bass</span>
+</div>
+
+</main>
+
+  <script src="/script.js"></script>
+</body>
+</html>
+)rawliteral";
+
+const char STYLE_CSS[] PROGMEM = R"rawliteral(
+html,
+body {
+    height: 100%;
+    margin: 0;
+    overflow: hidden;
+    background:
+        radial-gradient(circle at center, #3a3a3a 0%, #151515 75%);
+}
+
+body {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.eq-panel {
+    display: flex;
+    gap: 42px;
+    padding: 48px 56px;
+    border-radius: 24px;
+    background: #222;
+    box-shadow:
+        inset 0 1px 2px rgba(255,255,255,0.08),
+        0 18px 40px rgba(0,0,0,0.55);
+}
+
+.channel {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 18px;
+}
+
+.label {
+    font-family: Arial, sans-serif;
+    font-size: 12px;
+    font-weight: bold;
+    color: #c7c7c7;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+input[type="range"] {
+    -webkit-appearance: none;
+    appearance: none;
+
+    width: 260px;
+    height: 54px;
+
+    transform: rotate(-90deg);
+    margin: 105px -103px;
+
+    background:
+        repeating-linear-gradient(
+            to right,
+            #777 0,
+            #777 2px,
+            transparent 2px,
+            transparent 24px
+        )
+        no-repeat center 43px / 242px 14px;
+
+    cursor: pointer;
+}
+
+/* Track */
+input[type="range"]::-webkit-slider-runnable-track {
+    width: 260px;
+    height: 8px;
+    border-radius: 8px;
+
+    background:
+        linear-gradient(#555, #222) padding-box,
+        linear-gradient(#999, #333) border-box;
+
+    border: 2px solid transparent;
+
+    box-shadow:
+        inset 0 1px 2px rgba(255,255,255,0.25),
+        0 1px 2px rgba(0,0,0,0.9);
+}
+
+/* Thumb */
+input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+
+    width: 34px;
+    height: 62px;
+
+    margin-top: -29px;
+
+    border-radius: 8px;
+    border: 1px solid #777;
+
+    background:
+        linear-gradient(90deg, #f1f1f1 0%, #a8a8a8 50%, #4d4d4d 100%);
+
+    box-shadow:
+        -10px 0 18px rgba(0,0,0,0.75),
+        inset 1px 0 1px rgba(255,255,255,0.8),
+        inset -2px 0 2px rgba(0,0,0,0.45);
+
+    cursor: ns-resize;
+}
+
+/* Firefox */
+input[type="range"]::-moz-range-track {
+    height: 8px;
+    border-radius: 8px;
+    background: #333;
+}
+
+input[type="range"]::-moz-range-thumb {
+    width: 34px;
+    height: 62px;
+    border-radius: 8px;
+    border: 1px solid #777;
+    background: linear-gradient(90deg, #f1f1f1, #777);
+    cursor: ns-resize;
+}
+
+input[type="range"]:focus {
+    outline: none;
+}
+)rawliteral";
+
+const char SCRIPT_JS[] PROGMEM = R"rawliteral(
+const sliders = document.querySelectorAll("input[type='range']");
+
+const sendDelayMs = 40;
+const timers = {};
+
+sliders.forEach(slider => {
+    slider.addEventListener("input", () => {
+        const id = slider.dataset.id;
+        const value = slider.value;
+
+        clearTimeout(timers[id]);
+
+        timers[id] = setTimeout(() => {
+            fetch(`/api/slider?id=${id}&value=${value}`)
+                .catch(error => console.error("Send failed:", error));
+
+            console.log(`Slider ${id}: ${value}`);
+        }, sendDelayMs);
+    });
+});
+)rawliteral";
+
