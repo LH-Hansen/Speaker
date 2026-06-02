@@ -6,6 +6,13 @@ let syncPausedUntil = 0;
 
 const syncDelayAfterWebMs = 500;
 
+const audioKeys = {
+    0: "mic",
+    1: "treble",
+    2: "bass",
+    3: "volume"
+};
+
 sliders.forEach(slider => {
     slider.addEventListener("input", () => {
         const id = slider.dataset.id;
@@ -35,9 +42,8 @@ function sendLatest(id) {
         .finally(() => {
             inFlight[id] = false;
 
-            if (pendingValues[id] !== undefined) {
+            if (pendingValues[id] !== undefined)
                 sendLatest(id);
-            }
         });
 }
 
@@ -48,10 +54,13 @@ function updateFromArduino() {
     fetch("/api/audio")
         .then(response => response.json())
         .then(data => {
-            sliders[0].value = data.mic;
-            sliders[1].value = data.volume;
-            sliders[2].value = data.treble;
-            sliders[3].value = data.bass;
+            sliders.forEach(slider => {
+                const id = slider.dataset.id;
+                const key = audioKeys[id];
+
+                if (key && data[key] !== undefined)
+                    slider.value = data[key];
+            });
         })
         .catch(error => console.error("Audio sync failed:", error));
 }
