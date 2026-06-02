@@ -6,35 +6,35 @@ const char INDEX_HTML[] PROGMEM = R"rawliteral(
 <!DOCTYPE html>
 <html>
 <head>
-  <title>UNO R4 Sliders</title>
-  <link rel="stylesheet" href="/style.css">
+    <title>UNO R4 Sliders</title>
+    <link rel="stylesheet" href="/style.css">
 </head>
 <body>
-  <main class="eq-panel">
+    <main class="eq-panel">
 
-    <div class="channel">
-    <input type="range" min="0" max="270" value="2" data-id="0">
-    <span class="label">Mic</span>
-</div>
+        <div class="channel">
+            <input type="range" min="0" max="270" value="0" data-id="0">
+            <span class="label">Mic</span>
+        </div>
 
-<div class="channel">
-    <input type="range" min="0" max="270" value="50" data-id="1">
-    <span class="label">Treble</span>
-</div>
+        <div class="channel">
+            <input type="range" min="0" max="270" value="0" data-id="1">
+            <span class="label">Treble</span>
+        </div>
 
-<div class="channel">
-    <input type="range" min="0" max="270" value="50" data-id="2">
-    <span class="label">Base</span>
-</div>
+        <div class="channel">
+            <input type="range" min="0" max="270" value="0" data-id="2">
+            <span class="label">Bass</span>
+        </div>
 
-<div class="channel">
-    <input type="range" min="0" max="270" value="50" data-id="3">
-    <span class="label">Volume</span>
-</div>
+        <div class="channel">
+            <input type="range" min="0" max="270" value="0" data-id="3">
+            <span class="label">Volume</span>
+        </div>
 
-</main>
+    </main>
 
-  <script src="/script.js"></script>
+    <script src="/script.js"></script>
 </body>
 </html>
 )rawliteral";
@@ -196,6 +196,13 @@ let syncPausedUntil = 0;
 
 const syncDelayAfterWebMs = 500;
 
+const audioKeys = {
+    0: "mic",
+    1: "treble",
+    2: "bass",
+    3: "volume"
+};
+
 sliders.forEach(slider => {
     slider.addEventListener("input", () => {
         const id = slider.dataset.id;
@@ -225,9 +232,8 @@ function sendLatest(id) {
         .finally(() => {
             inFlight[id] = false;
 
-            if (pendingValues[id] !== undefined) {
+            if (pendingValues[id] !== undefined)
                 sendLatest(id);
-            }
         });
 }
 
@@ -238,10 +244,13 @@ function updateFromArduino() {
     fetch("/api/audio")
         .then(response => response.json())
         .then(data => {
-            sliders[0].value = data.mic;
-            sliders[1].value = data.volume;
-            sliders[2].value = data.treble;
-            sliders[3].value = data.bass;
+            sliders.forEach(slider => {
+                const id = slider.dataset.id;
+                const key = audioKeys[id];
+
+                if (key && data[key] !== undefined)
+                    slider.value = data[key];
+            });
         })
         .catch(error => console.error("Audio sync failed:", error));
 }

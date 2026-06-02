@@ -1,80 +1,47 @@
 #pragma once
 
 #include <Arduino.h>
+#include "../driver/ServoDriver.h"
 
 class AudioController
 {
 public:
-    void begin()
-    {
-        pinMode(A0, INPUT);
-    }
+    void begin();
+    void update();
 
-    void update()
-    {
-        int newPotValue = map(analogRead(A0), 0, 1023, 0, 270);
+    void setWebValue(int id, int value);
 
-        if (abs(newPotValue - _potValue) >= _threshold)
-        {
-            _potValue = newPotValue;
-            _targetValue = _potValue;
-            _lastSource = "pot";
-
-            printState();
-        }
-    }
-
-    void setWebValue(int id, int value)
-    {
-        if (id != 0)
-            return;
-
-        value = constrain(value, 0, 270);
-
-        if (abs(value - _webValue) >= _threshold)
-        {
-            _webValue = value;
-            _targetValue = _webValue;
-            _lastSource = "web";
-
-            printState();
-        }
-    }
-
-    int getMic() const
-    {
-        return _targetValue;
-    }
-
-    int getValue(int id) const
-    {
-        if (id == 0)
-            return _targetValue;
-
-        return 135;
-    }
+    int getMic() const;
+    int getValue(int id) const;
 
 private:
-    int _potValue = 135;
-    int _webValue = 135;
-    int _targetValue = 135;
+    static const int CHANNEL_COUNT = 4;
 
-    const int _threshold = 5;
+    static const int MIC = 0;
+    static const int TREBLE = 1;
+    static const int BASS = 2;
+    static const int VOLUME = 3;
 
-    const char* _lastSource = "none";
+    static const int TRUE_MAX_DEGREES = 270;
+    static const int SERVO_MAX_DEGREES = 180;
 
-    void printState()
-    {
-        Serial.print("target: ");
-        Serial.print(_targetValue);
+    static const int _potPins[CHANNEL_COUNT];
 
-        Serial.print(" pot: ");
-        Serial.print(_potValue);
+    ServoDriver _servos[CHANNEL_COUNT] = {
+        ServoDriver(9,  TRUE_MAX_DEGREES, SERVO_MAX_DEGREES),
+        ServoDriver(10, TRUE_MAX_DEGREES, SERVO_MAX_DEGREES),
+        ServoDriver(11, TRUE_MAX_DEGREES, SERVO_MAX_DEGREES),
+        ServoDriver(12, TRUE_MAX_DEGREES, SERVO_MAX_DEGREES)
+    };
 
-        Serial.print(" web: ");
-        Serial.print(_webValue);
+    int _potValues[CHANNEL_COUNT] = {0, 0, 0, 0};
+    int _webValues[CHANNEL_COUNT] = {0, 0, 0, 0};
+    int _targetValues[CHANNEL_COUNT] = {0, 0, 0, 0};
 
-        Serial.print(" source: ");
-        Serial.println(_lastSource);
-    }
+    const int _threshold = 10;
+    const char* _lastSource[CHANNEL_COUNT] = {"none", "none", "none", "none"};
+
+    int readPotValue(int id);
+    void applyTargetValue(int id, const char* source);
+    void printState(int id);
 };
