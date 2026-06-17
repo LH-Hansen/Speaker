@@ -62,6 +62,9 @@ Servos  LEDs  Potentiometers
 
 ## Hardware Overview
 
+<img width="3000" height="2116" alt="image" src="https://github.com/user-attachments/assets/a8b9c987-565e-4eb9-8fce-68d05a0a5117" />
+
+
 ### Main Controller
 
 #### Arduino UNO R4 WiFi
@@ -191,7 +194,7 @@ Output devices:
 
 ## Power System
 
-The current design includes multiple buck converters.
+The current design includes multiple buck converters powered by either battery or power supply.
 
 Purpose:
 
